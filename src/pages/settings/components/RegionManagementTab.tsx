@@ -19,7 +19,7 @@ interface RegionAssociation {
   region_id: string;
   elevator_id: string;
   town_id: string;
-  crop_id: string;
+  class_id: string;
   crop_comparison_id: string | null;
   is_active: boolean;
   created_at: string;
@@ -28,6 +28,7 @@ interface RegionAssociation {
   region_name?: string;
   elevator_name?: string;
   town_name?: string;
+  class_name?: string;
   crop_name?: string;
   comparison_name?: string;
 }
@@ -35,7 +36,7 @@ interface RegionAssociation {
 interface MasterData {
   elevators: Array<{ id: string; name: string }>;
   towns: Array<{ id: string; name: string }>;
-  crops: Array<{ id: string; name: string }>;
+  cropClasses: Array<{ id: string; name: string; crop_name: string }>;
   comparisons: Array<{ id: string; name: string }>;
 }
 
@@ -45,7 +46,7 @@ export const RegionManagementTab: React.FC = () => {
   const [masterData, setMasterData] = useState<MasterData>({
     elevators: [],
     towns: [],
-    crops: [],
+    cropClasses: [],
     comparisons: []
   });
   const [loading, setLoading] = useState(false);
@@ -57,7 +58,7 @@ export const RegionManagementTab: React.FC = () => {
     region_id: '',
     elevator_id: '',
     town_id: '',
-    crop_id: '',
+    class_id: '',
     crop_comparison_id: ''
   });
   const [error, setError] = useState<string | null>(null);
@@ -87,7 +88,7 @@ export const RegionManagementTab: React.FC = () => {
           master_regions!inner(name),
           master_elevators!inner(name),
           master_towns!inner(name),
-          master_crops!inner(name),
+          crop_classes!inner(name, master_crops!inner(name)),
           master_crop_comparison(name)
         `)
         .eq('is_active', true);
@@ -95,16 +96,16 @@ export const RegionManagementTab: React.FC = () => {
       if (associationsError) throw associationsError;
 
       // Load master data for dropdowns
-      const [elevatorsRes, townsRes, cropsRes, comparisonsRes] = await Promise.all([
+      const [elevatorsRes, townsRes, cropClassesRes, comparisonsRes] = await Promise.all([
         supabase.from('master_elevators').select('id, name').eq('is_active', true).order('name'),
         supabase.from('master_towns').select('id, name').eq('is_active', true).order('name'),
-        supabase.from('master_crops').select('id, name').eq('is_active', true).order('name'),
+        supabase.from('crop_classes').select('id, name, master_crops!inner(name)').eq('is_active', true).order('name'),
         supabase.from('master_crop_comparison').select('id, name').eq('is_active', true).order('name')
       ]);
 
       if (elevatorsRes.error) throw elevatorsRes.error;
       if (townsRes.error) throw townsRes.error;
-      if (cropsRes.error) throw cropsRes.error;
+      if (cropClassesRes.error) throw cropClassesRes.error;
       if (comparisonsRes.error) throw comparisonsRes.error;
 
       // Format associations data
@@ -113,7 +114,8 @@ export const RegionManagementTab: React.FC = () => {
         region_name: assoc.master_regions?.name,
         elevator_name: assoc.master_elevators?.name,
         town_name: assoc.master_towns?.name,
-        crop_name: assoc.master_crops?.name,
+        class_name: assoc.crop_classes?.name,
+        crop_name: assoc.crop_classes?.master_crops?.name,
         comparison_name: assoc.master_crop_comparison?.name
       }));
 
@@ -122,7 +124,11 @@ export const RegionManagementTab: React.FC = () => {
       setMasterData({
         elevators: elevatorsRes.data || [],
         towns: townsRes.data || [],
-        crops: cropsRes.data || [],
+        cropClasses: (cropClassesRes.data || []).map(cc => ({
+          id: cc.id,
+          name: `${cc.master_crops.name} - ${cc.name}`,
+          crop_name: cc.master_crops.name
+        })),
         comparisons: comparisonsRes.data || []
       });
 
@@ -163,9 +169,9 @@ export const RegionManagementTab: React.FC = () => {
 
   // Add new association
   const addAssociation = async () => {
-    const { region_id, elevator_id, town_id, crop_id, crop_comparison_id } = newAssociation;
+    const { region_id, elevator_id, town_id, class_id, crop_comparison_id } = newAssociation;
     
-    if (!region_id || !elevator_id || !town_id || !crop_id) {
+    if (!region_id || !elevator_id || !town_id || !class_id) {
       showError('Missing fields', 'Please fill in all required fields');
       return;
     }
@@ -177,7 +183,7 @@ export const RegionManagementTab: React.FC = () => {
           region_id,
           elevator_id,
           town_id,
-          crop_id,
+          class_id,
           crop_comparison_id: crop_comparison_id || null
         });
 
@@ -189,7 +195,7 @@ export const RegionManagementTab: React.FC = () => {
         region_id: '',
         elevator_id: '',
         town_id: '',
-        crop_id: '',
+        class_id: '',
         crop_comparison_id: ''
       });
       loadData();
@@ -381,6 +387,10 @@ export const RegionManagementTab: React.FC = () => {
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <Wheat className="w-4 h-4 text-gray-400" />
+                                  <span className="font-medium text-gray-700">Class:</span>
+                                  <span className="text-gray-600">{association.class_name}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
                                   <span className="font-medium text-gray-700">Crop:</span>
                                   <span className="text-gray-600">{association.crop_name}</span>
                                 </div>
@@ -464,7 +474,7 @@ export const RegionManagementTab: React.FC = () => {
             region_id: '',
             elevator_id: '',
             town_id: '',
-            crop_id: '',
+            class_id: '',
             crop_comparison_id: ''
           });
           setSelectedRegionId(null);
@@ -522,16 +532,16 @@ export const RegionManagementTab: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Crop *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Crop Class *</label>
             <select
-              value={newAssociation.crop_id}
-              onChange={(e) => setNewAssociation(prev => ({ ...prev, crop_id: e.target.value }))}
+              value={newAssociation.class_id}
+              onChange={(e) => setNewAssociation(prev => ({ ...prev, class_id: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-tg-primary focus:border-transparent"
             >
-              <option value="">Select Crop...</option>
-              {masterData.crops.map((crop) => (
-                <option key={crop.id} value={crop.id}>
-                  {crop.name}
+              <option value="">Select Crop Class...</option>
+              {masterData.cropClasses.map((cropClass) => (
+                <option key={cropClass.id} value={cropClass.id}>
+                  {cropClass.name}
                 </option>
               ))}
             </select>
@@ -561,7 +571,7 @@ export const RegionManagementTab: React.FC = () => {
                   region_id: '',
                   elevator_id: '',
                   town_id: '',
-                  crop_id: '',
+                  class_id: '',
                   crop_comparison_id: ''
                 });
                 setSelectedRegionId(null);
@@ -572,7 +582,7 @@ export const RegionManagementTab: React.FC = () => {
             </Button>
             <Button
               onClick={addAssociation}
-              disabled={!newAssociation.region_id || !newAssociation.elevator_id || !newAssociation.town_id || !newAssociation.crop_id}
+              disabled={!newAssociation.region_id || !newAssociation.elevator_id || !newAssociation.town_id || !newAssociation.class_id}
             >
               Add Association
             </Button>
