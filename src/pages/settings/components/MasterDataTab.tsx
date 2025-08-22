@@ -210,7 +210,7 @@ export const MasterDataTab: React.FC = () => {
         )}
 
         {/* Tables Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           <AnimatePresence>
             {filteredTables.map((table, index) => (
               <motion.div
@@ -224,31 +224,31 @@ export const MasterDataTab: React.FC = () => {
                 whileHover={{ scale: 1.02, y: -2 }}
                 whileTap={{ scale: 0.98 }}
               >
-                <div className="p-6">
+                <div className="p-4">
                   {/* Table Icon and Name */}
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 bg-tg-green rounded-xl flex items-center justify-center group-hover:bg-tg-primary transition-colors">
-                      <Table className="w-6 h-6 text-white" />
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-8 h-8 bg-tg-green rounded-lg flex items-center justify-center group-hover:bg-tg-primary transition-colors">
+                      <Table className="w-4 h-4 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-800 truncate">
+                      <h3 className="text-sm font-semibold text-gray-800 truncate">
                         {table.table_name}
                       </h3>
-                      <p className="text-sm text-gray-500 capitalize">
+                      <p className="text-xs text-gray-500 capitalize">
                         {table.table_type.replace('_', ' ')}
                       </p>
                     </div>
                   </div>
 
                   {/* Stats */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-xs">
                       <span className="text-gray-600">Rows</span>
                       <span className="font-medium text-gray-800">
                         {table.row_count?.toLocaleString() || '0'}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center justify-between text-xs">
                       <span className="text-gray-600">Schema</span>
                       <span className="font-medium text-gray-800">
                         {table.table_schema}
@@ -257,9 +257,9 @@ export const MasterDataTab: React.FC = () => {
                   </div>
 
                   {/* Actions */}
-                  <div className="mt-4 pt-4 border-t border-gray-100">
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <Eye className="w-4 h-4" />
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <div className="flex items-center gap-1 text-xs text-gray-500">
+                      <Eye className="w-3 h-3" />
                       <span>Click to view data</span>
                     </div>
                   </div>
