@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Settings, Database, Users, Bell, Shield, Palette } from 'lucide-react';
+import { Settings, Database, Users, Wheat, MapPin } from 'lucide-react';
 import { MasterDataTab } from './components/MasterDataTab';
+import { CropManagementTab } from './components/CropManagementTab';
+import { RegionManagementTab } from './components/RegionManagementTab';
 
-export type SettingsTab = 'master-data' | 'users' | 'notifications' | 'security' | 'appearance';
+export type SettingsTab = 'master-data' | 'users' | 'crop-management' | 'region-management';
 
 interface SettingsTabConfig {
   id: SettingsTab;
@@ -29,30 +31,23 @@ const settingsTabs: SettingsTabConfig[] = [
     component: () => <div className="p-6 text-gray-500">User Management - Coming Soon</div>
   },
   {
-    id: 'notifications',
-    title: 'Notifications',
-    icon: Bell,
-    description: 'Configure system notifications and alerts',
-    component: () => <div className="p-6 text-gray-500">Notifications - Coming Soon</div>
+    id: 'crop-management',
+    title: 'Crop Management',
+    icon: Wheat,
+    description: 'Manage crops, classes, and specifications',
+    component: CropManagementTab
   },
   {
-    id: 'security',
-    title: 'Security',
-    icon: Shield,
-    description: 'Security settings and access controls',
-    component: () => <div className="p-6 text-gray-500">Security - Coming Soon</div>
-  },
-  {
-    id: 'appearance',
-    title: 'Appearance',
-    icon: Palette,
-    description: 'Customize the look and feel',
-    component: () => <div className="p-6 text-gray-500">Appearance - Coming Soon</div>
+    id: 'region-management',
+    title: 'Region Management',
+    icon: MapPin,
+    description: 'Manage regions and associations',
+    component: RegionManagementTab
   }
 ];
 
 export const SettingsPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<SettingsTab>('master-data');
+  const [activeTab, setActiveTab] = useState<SettingsTab>('crop-management');
 
   const activeTabConfig = settingsTabs.find(tab => tab.id === activeTab);
   const ActiveComponent = activeTabConfig?.component || (() => null);
