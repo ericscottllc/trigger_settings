@@ -214,6 +214,48 @@ export const TableDataView: React.FC<TableDataViewProps> = ({ table, onBack, onR
     }
   };
 
+  // Add new record
+  const addNewRecord = async () => {
+    if (!table.columns) return;
+
+    try {
+      // Filter out empty values and convert types
+      const recordToInsert: any = {};
+      
+      Object.entries(newRecord).forEach(([key, value]) => {
+        if (value !== '' && value !== null && value !== undefined) {
+          const column = table.columns?.find(col => col.column_name === key);
+          if (column) {
+            // Convert boolean strings to actual booleans
+            if (column.data_type === 'boolean') {
+              recordToInsert[key] = value === 'true';
+            } else if (column.data_type.includes('int') || column.data_type === 'numeric') {
+              recordToInsert[key] = Number(value);
+            } else {
+              recordToInsert[key] = value;
+            }
+          }
+        }
+      });
+
+      const { error: insertError } = await supabase
+        .from(table.table_name)
+        .insert(recordToInsert);
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      showSuccess('Record added', 'The new record has been added successfully');
+      setShowAddModal(false);
+      setNewRecord({});
+      loadData(currentPage, searchTerm);
+    } catch (err) {
+      console.error('Error adding record:', err);
+      showError('Failed to add record', err instanceof Error ? err.message : 'Unknown error');
+    }
+  };
+
   // Load data on component mount
   useEffect(() => {
     loadData();
