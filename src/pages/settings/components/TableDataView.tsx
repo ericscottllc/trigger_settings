@@ -55,9 +55,11 @@ export const TableDataView: React.FC<TableDataViewProps> = ({ table, onBack, onR
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [editingRow, setEditingRow] = useState<any | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [newRecord, setNewRecord] = useState<any>({});
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set(['created_at', 'updated_at']));
+  const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set(['created_at', 'updated_at', 'id']));
+  const [showColumnToggle, setShowColumnToggle] = useState(false);
   
   const { error: showError, success: showSuccess } = useNotifications();
   

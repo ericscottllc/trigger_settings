@@ -31,6 +31,7 @@ export const MasterDataTab: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [hasLoadedTables, setHasLoadedTables] = useState(false);
   const { error: showError, success: showSuccess } = useNotifications();
 
   // Load all tables in the public schema
@@ -68,6 +69,7 @@ export const MasterDataTab: React.FC = () => {
       );
 
       setTables(tablesWithCounts);
+      setHasLoadedTables(true);
       showSuccess('Tables loaded successfully', `Found ${tablesWithCounts.length} tables`);
     } catch (err) {
       console.error('Error loading tables:', err);
@@ -110,11 +112,6 @@ export const MasterDataTab: React.FC = () => {
   const filteredTables = tables.filter(table =>
     table.table_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  // Load tables on component mount
-  useEffect(() => {
-    loadTables();
-  }, [loadTables]);
 
   if (selectedTable) {
     return (
@@ -159,17 +156,35 @@ export const MasterDataTab: React.FC = () => {
               placeholder="Search tables..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              disabled={!hasLoadedTables}
               className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-tg-primary focus:border-transparent"
             />
           </div>
-          <div className="text-sm text-gray-500">
-            {filteredTables.length} of {tables.length} tables
-          </div>
+          {hasLoadedTables && (
+            <div className="text-sm text-gray-500">
+              {filteredTables.length} of {tables.length} tables
+            </div>
+          )}
         </div>
       </div>
 
       {/* Content */}
       <div className="flex-1 overflow-auto p-6">
+        {!hasLoadedTables && !loading && (
+          <div className="text-center py-12">
+            <Database className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-600 mb-2">Ready to Load Tables</h3>
+            <p className="text-gray-500 mb-6">Click "Refresh" to load all tables from the database</p>
+            <Button
+              onClick={loadTables}
+              icon={RefreshCw}
+              size="lg"
+            >
+              Load Tables
+            </Button>
+          </div>
+        )}
+
         {error && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -193,7 +208,7 @@ export const MasterDataTab: React.FC = () => {
           </div>
         )}
 
-        {!loading && filteredTables.length === 0 && searchTerm && (
+        {!loading && hasLoadedTables && filteredTables.length === 0 && searchTerm && (
           <div className="text-center py-12">
             <Database className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-600 mb-2">No tables found</h3>
@@ -201,7 +216,7 @@ export const MasterDataTab: React.FC = () => {
           </div>
         )}
 
-        {!loading && filteredTables.length === 0 && !searchTerm && (
+        {!loading && hasLoadedTables && filteredTables.length === 0 && !searchTerm && (
           <div className="text-center py-12">
             <Database className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-600 mb-2">No tables available</h3>
@@ -210,64 +225,66 @@ export const MasterDataTab: React.FC = () => {
         )}
 
         {/* Tables Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          <AnimatePresence>
-            {filteredTables.map((table, index) => (
-              <motion.div
-                key={table.table_name}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
-                className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer group"
-                onClick={() => handleTableSelect(table)}
-                whileHover={{ scale: 1.02, y: -2 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <div className="p-4">
-                  {/* Table Icon and Name */}
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-8 h-8 bg-tg-green rounded-lg flex items-center justify-center group-hover:bg-tg-primary transition-colors">
-                      <Table className="w-4 h-4 text-white" />
+        {hasLoadedTables && (
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            <AnimatePresence>
+              {filteredTables.map((table, index) => (
+                <motion.div
+                  key={table.table_name}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                  className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer group"
+                  onClick={() => handleTableSelect(table)}
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <div className="p-4">
+                    {/* Table Icon and Name */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-8 h-8 bg-tg-green rounded-lg flex items-center justify-center group-hover:bg-tg-primary transition-colors">
+                        <Table className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-semibold text-gray-800 truncate">
+                          {table.table_name}
+                        </h3>
+                        <p className="text-xs text-gray-500 capitalize">
+                          {table.table_type.replace('_', ' ')}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-semibold text-gray-800 truncate">
-                        {table.table_name}
-                      </h3>
-                      <p className="text-xs text-gray-500 capitalize">
-                        {table.table_type.replace('_', ' ')}
-                      </p>
-                    </div>
-                  </div>
 
-                  {/* Stats */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-600">Rows</span>
-                      <span className="font-medium text-gray-800">
-                        {table.row_count?.toLocaleString() || '0'}
-                      </span>
+                    {/* Stats */}
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-gray-600">Rows</span>
+                        <span className="font-medium text-gray-800">
+                          {table.row_count?.toLocaleString() || '0'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-gray-600">Schema</span>
+                        <span className="font-medium text-gray-800">
+                          {table.table_schema}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-600">Schema</span>
-                      <span className="font-medium text-gray-800">
-                        {table.table_schema}
-                      </span>
-                    </div>
-                  </div>
 
-                  {/* Actions */}
-                  <div className="mt-3 pt-3 border-t border-gray-100">
-                    <div className="flex items-center gap-1 text-xs text-gray-500">
-                      <Eye className="w-3 h-3" />
-                      <span>Click to view data</span>
+                    {/* Actions */}
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <div className="flex items-center gap-1 text-xs text-gray-500">
+                        <Eye className="w-3 h-3" />
+                        <span>Click to view data</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        )}
       </div>
     </div>
   );
