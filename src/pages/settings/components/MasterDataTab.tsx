@@ -83,7 +83,7 @@ export const MasterDataTab: React.FC = () => {
   const loadTableColumns = useCallback(async (tableName: string) => {
     try {
       const { data: columnsData, error: columnsError } = await supabase.rpc('get_table_columns', {
-        table_name: tableName
+        table_name_param: tableName
       });
 
       if (columnsError) {
