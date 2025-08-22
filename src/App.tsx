@@ -10,6 +10,7 @@ import { Sidebar } from './components/Core/Sidebar';
 import { MainContent } from './components/Core/MainContent';
 import { CodeExplorer } from './CodeExplorer';
 import { SchemaExplorer } from './SchemaExplorer';
+import { SettingsPage } from './pages/settings';
 import { NavigationItem } from './types/navigation';
 
 const AppContent: React.FC = () => {
@@ -69,6 +70,9 @@ const AppContent: React.FC = () => {
     }
   };
 
+  // Check if we should show settings page
+  const showSettings = activeNavItem?.title.toLowerCase() === 'settings';
+
   return (
     <>
     <motion.div
@@ -87,7 +91,11 @@ const AppContent: React.FC = () => {
           transition={{ duration: 0.3 }}
           className="flex-1"
         >
-          <MainContent activeNavItem={activeNavItem} onNavigate={handleNavigate} />
+          {showSettings ? (
+            <SettingsPage />
+          ) : (
+            <MainContent activeNavItem={activeNavItem} onNavigate={handleNavigate} />
+          )}
         </motion.div>
       </AnimatePresence>
     </motion.div>
