@@ -58,25 +58,22 @@ export const SettingsPage: React.FC = () => {
   const ActiveComponent = activeTabConfig?.component || (() => null);
 
   return (
-    <div className="flex-1 bg-gray-50 overflow-hidden">
-      <div className="max-w-7xl mx-auto h-full flex">
-        {/* Sidebar */}
-        <div className="w-80 bg-white border-r border-gray-200 shadow-sm">
-          {/* Header */}
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-tg-primary rounded-xl flex items-center justify-center">
-                <Settings className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-800">Settings</h1>
-                <p className="text-sm text-gray-500">System configuration</p>
-              </div>
+    <div className="flex-1 bg-gray-50 overflow-hidden flex flex-col">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-tg-primary rounded-xl flex items-center justify-center">
+              <Settings className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800">Settings</h1>
+              <p className="text-sm text-gray-500">System configuration and management</p>
             </div>
           </div>
 
-          {/* Navigation */}
-          <div className="p-4 space-y-2">
+          {/* Tab Navigation */}
+          <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
             {settingsTabs.map((tab, index) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -85,49 +82,38 @@ export const SettingsPage: React.FC = () => {
                 <motion.button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-start gap-3 p-4 rounded-xl transition-all duration-200 text-left ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium text-sm transition-all duration-200 ${
                     isActive
-                      ? 'bg-tg-primary text-white shadow-md'
-                      : 'text-gray-600 hover:bg-gray-50'
+                      ? 'bg-white text-tg-primary shadow-sm'
+                      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
                   }`}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.05 }}
-                  whileHover={!isActive ? { x: 4 } : {}}
+                  whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <div className={`flex-shrink-0 p-1 rounded-lg ${
-                    isActive ? 'bg-white/20' : ''
-                  }`}>
-                    <Icon className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium mb-1">{tab.title}</h3>
-                    <p className={`text-xs leading-relaxed ${
-                      isActive ? 'text-white/80' : 'text-gray-500'
-                    }`}>
-                      {tab.description}
-                    </p>
-                  </div>
+                  <Icon className="w-4 h-4" />
+                  <span>{tab.title}</span>
                 </motion.button>
               );
             })}
           </div>
         </div>
+      </div>
 
-        {/* Main Content */}
-        <div className="flex-1 overflow-auto">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-            className="h-full"
-          >
-            <ActiveComponent />
-          </motion.div>
-        </div>
+      {/* Tab Content */}
+      <div className="flex-1 overflow-auto">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.3 }}
+          className="h-full"
+        >
+          <ActiveComponent />
+        </motion.div>
       </div>
     </div>
   );
