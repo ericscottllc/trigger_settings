@@ -88,6 +88,9 @@ export const UserManagementTab: React.FC = () => {
     setError(null);
 
     try {
+      // Debug: Log the raw query result
+      console.log('Loading users...');
+      
       // Load users with their roles
       const { data: usersData, error: usersError } = await supabase
         .from('users')
@@ -100,6 +103,9 @@ export const UserManagementTab: React.FC = () => {
         `)
         .eq('is_active', true)
         .order('full_name');
+
+      console.log('Raw users data:', usersData);
+      console.log('Users error:', usersError);
 
       if (usersError) throw usersError;
 
