@@ -4,6 +4,7 @@ import { Settings, Database, Users, Wheat, MapPin } from 'lucide-react';
 import { MasterDataTab } from './components/MasterDataTab';
 import { CropManagementTab } from './components/CropManagementTab';
 import { RegionManagementTab } from './components/RegionManagementTab';
+import { UserManagementTab } from './components/UserManagementTab';
 
 export type SettingsTab = 'master-data' | 'users' | 'crop-management' | 'region-management';
 
@@ -28,7 +29,7 @@ const settingsTabs: SettingsTabConfig[] = [
     title: 'User Management',
     icon: Users,
     description: 'Manage user accounts and permissions',
-    component: () => <div className="p-6 text-gray-500">User Management - Coming Soon</div>
+    component: UserManagementTab
   },
   {
     id: 'crop-management',
