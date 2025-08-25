@@ -94,13 +94,7 @@ export const UserManagementTab: React.FC = () => {
       // Load users with their roles
       const { data: usersData, error: usersError } = await supabase
         .from('users')
-        .select(`
-          *,
-          user_roles!user_roles_user_id_fkey(
-            role_id,
-            roles!inner(*)
-          )
-        `)
+        .select('*')
         .eq('is_active', true)
         .order('full_name');
 
@@ -108,6 +102,18 @@ export const UserManagementTab: React.FC = () => {
       console.log('Users error:', usersError);
 
       if (usersError) throw usersError;
+
+      // Load user roles separately to avoid join issues
+      const userIds = (usersData || []).map(user => user.id);
+      const { data: userRolesData, error: userRolesError } = await supabase
+        .from('user_roles')
+        .select(`
+          user_id,
+          roles!inner(*)
+        `)
+        .in('user_id', userIds);
+
+      if (userRolesError) throw userRolesError;
 
       // Load roles with their permissions and user counts
       const { data: rolesData, error: rolesError } = await supabase
@@ -138,7 +144,9 @@ export const UserManagementTab: React.FC = () => {
       // Process users data
       const processedUsers = (usersData || []).map((user: any) => ({
         ...user,
-        roles: user.user_roles?.map((ur: any) => ur.roles) || []
+        roles: (userRolesData || [])
+          .filter((ur: any) => ur.user_id === user.id)
+          .map((ur: any) => ur.roles)
       }));
 
       // Process roles data
