@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Map, Plus, Edit, Trash2, Search } from 'lucide-react';
-import { Card, Button, Input } from '../../../../components/Shared/SharedComponents';
+import { Map, Edit, Trash2, Search } from 'lucide-react';
+import { Card, Button, Input, Modal } from '../../../../components/Shared/SharedComponents';
 import { supabase } from '../../../../lib/supabase';
 import { useNotifications } from '../../../../contexts/NotificationContext';
 
@@ -14,10 +14,99 @@ interface Region {
   updated_at: string;
 }
 
+interface EditRegionModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  region: Region | null;
+  onSave: () => void;
+}
+
+const EditRegionModal: React.FC<EditRegionModalProps> = ({ isOpen, onClose, region, onSave }) => {
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    code: ''
+  });
+  const { success, error } = useNotifications();
+
+  useEffect(() => {
+    if (region) {
+      setFormData({
+        name: region.name,
+        code: region.code || ''
+      });
+    }
+  }, [region]);
+
+  const handleSave = async () => {
+    if (!region || !formData.name.trim()) return;
+
+    try {
+      setLoading(true);
+      
+      const { error: updateError } = await supabase
+        .from('master_regions')
+        .update({
+          name: formData.name.trim(),
+          code: formData.code.trim() || null
+        })
+        .eq('id', region.id);
+
+      if (updateError) throw updateError;
+
+      success('Region updated', 'Region has been updated successfully');
+      onSave();
+      onClose();
+    } catch (err) {
+      console.error('Error updating region:', err);
+      error('Failed to update region', err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Edit Region">
+      <div className="p-6 space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Region Name</label>
+          <input
+            type="text"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-tg-green"
+            placeholder="Enter region name"
+            required
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Region Code</label>
+          <input
+            type="text"
+            value={formData.code}
+            onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-tg-green"
+            placeholder="Enter region code (optional)"
+          />
+        </div>
+
+        <div className="flex justify-end gap-3 pt-4">
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="secondary" onClick={handleSave} loading={loading}>
+            Save Changes
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
 export const ManageRegions: React.FC = () => {
   const [regions, setRegions] = useState<Region[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [editingRegion, setEditingRegion] = useState<Region | null>(null);
   const { success, error } = useNotifications();
 
   const fetchRegions = async () => {
@@ -62,6 +151,25 @@ export const ManageRegions: React.FC = () => {
     }
   };
 
+  const deleteRegion = async (regionId: string) => {
+    if (!confirm('Are you sure you want to delete this region? This action cannot be undone.')) return;
+    
+    try {
+      const { error: deleteError } = await supabase
+        .from('master_regions')
+        .delete()
+        .eq('id', regionId);
+
+      if (deleteError) throw deleteError;
+
+      setRegions(prev => prev.filter(region => region.id !== regionId));
+      success('Region deleted', 'Region has been deleted successfully');
+    } catch (err) {
+      console.error('Error deleting region:', err);
+      error('Failed to delete region', err instanceof Error ? err.message : 'Unknown error');
+    }
+  };
+
   const filteredRegions = regions.filter(region =>
     region.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (region.code && region.code.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -86,9 +194,6 @@ export const ManageRegions: React.FC = () => {
             <p className="text-sm text-gray-600">{regions.length} total regions</p>
           </div>
         </div>
-        <Button variant="secondary" icon={Plus} size="sm">
-          Add Region
-        </Button>
       </div>
 
       {/* Search */}
@@ -139,23 +244,20 @@ export const ManageRegions: React.FC = () => {
                   variant="ghost"
                   size="sm"
                   icon={Edit}
-                  onClick={() => {
-                    // TODO: Implement edit region modal
-                    console.log('Edit region:', region.id);
-                  }}
+                  onClick={() => setEditingRegion(region)}
                   fullWidth
                 >
                   Edit
                 </Button>
                 
                 <Button
-                  variant={region.is_active ? "danger" : "secondary"}
+                  variant="danger"
                   size="sm"
-                  icon={region.is_active ? Trash2 : Plus}
-                  onClick={() => toggleRegionStatus(region.id, region.is_active)}
+                  icon={Trash2}
+                  onClick={() => deleteRegion(region.id)}
                   fullWidth
                 >
-                  {region.is_active ? 'Deactivate' : 'Activate'}
+                  Delete
                 </Button>
               </div>
             </Card>
@@ -172,6 +274,14 @@ export const ManageRegions: React.FC = () => {
           </p>
         </Card>
       )}
+
+      {/* Edit Modal */}
+      <EditRegionModal
+        isOpen={!!editingRegion}
+        onClose={() => setEditingRegion(null)}
+        region={editingRegion}
+        onSave={fetchRegions}
+      />
     </div>
   );
 };

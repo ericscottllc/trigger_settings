@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Building2, Plus, Edit, Trash2, Search } from 'lucide-react';
-import { Card, Button, Input } from '../../../../components/Shared/SharedComponents';
+import { Building2, Edit, Trash2, Search } from 'lucide-react';
+import { Card, Button, Input, Modal } from '../../../../components/Shared/SharedComponents';
 import { supabase } from '../../../../lib/supabase';
 import { useNotifications } from '../../../../contexts/NotificationContext';
 
@@ -14,10 +14,99 @@ interface Elevator {
   updated_at: string;
 }
 
+interface EditElevatorModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  elevator: Elevator | null;
+  onSave: () => void;
+}
+
+const EditElevatorModal: React.FC<EditElevatorModalProps> = ({ isOpen, onClose, elevator, onSave }) => {
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    code: ''
+  });
+  const { success, error } = useNotifications();
+
+  useEffect(() => {
+    if (elevator) {
+      setFormData({
+        name: elevator.name,
+        code: elevator.code || ''
+      });
+    }
+  }, [elevator]);
+
+  const handleSave = async () => {
+    if (!elevator || !formData.name.trim()) return;
+
+    try {
+      setLoading(true);
+      
+      const { error: updateError } = await supabase
+        .from('master_elevators')
+        .update({
+          name: formData.name.trim(),
+          code: formData.code.trim() || null
+        })
+        .eq('id', elevator.id);
+
+      if (updateError) throw updateError;
+
+      success('Elevator updated', 'Elevator has been updated successfully');
+      onSave();
+      onClose();
+    } catch (err) {
+      console.error('Error updating elevator:', err);
+      error('Failed to update elevator', err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Edit Elevator">
+      <div className="p-6 space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Elevator Name</label>
+          <input
+            type="text"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-tg-green"
+            placeholder="Enter elevator name"
+            required
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Elevator Code</label>
+          <input
+            type="text"
+            value={formData.code}
+            onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-tg-green"
+            placeholder="Enter elevator code (optional)"
+          />
+        </div>
+
+        <div className="flex justify-end gap-3 pt-4">
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="secondary" onClick={handleSave} loading={loading}>
+            Save Changes
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
 export const ManageElevators: React.FC = () => {
   const [elevators, setElevators] = useState<Elevator[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [editingElevator, setEditingElevator] = useState<Elevator | null>(null);
   const { success, error } = useNotifications();
 
   const fetchElevators = async () => {
@@ -62,6 +151,25 @@ export const ManageElevators: React.FC = () => {
     }
   };
 
+  const deleteElevator = async (elevatorId: string) => {
+    if (!confirm('Are you sure you want to delete this elevator? This action cannot be undone.')) return;
+    
+    try {
+      const { error: deleteError } = await supabase
+        .from('master_elevators')
+        .delete()
+        .eq('id', elevatorId);
+
+      if (deleteError) throw deleteError;
+
+      setElevators(prev => prev.filter(elevator => elevator.id !== elevatorId));
+      success('Elevator deleted', 'Elevator has been deleted successfully');
+    } catch (err) {
+      console.error('Error deleting elevator:', err);
+      error('Failed to delete elevator', err instanceof Error ? err.message : 'Unknown error');
+    }
+  };
+
   const filteredElevators = elevators.filter(elevator =>
     elevator.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (elevator.code && elevator.code.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -86,9 +194,6 @@ export const ManageElevators: React.FC = () => {
             <p className="text-sm text-gray-600">{elevators.length} total elevators</p>
           </div>
         </div>
-        <Button variant="secondary" icon={Plus} size="sm">
-          Add Elevator
-        </Button>
       </div>
 
       {/* Search */}
@@ -139,23 +244,20 @@ export const ManageElevators: React.FC = () => {
                   variant="ghost"
                   size="sm"
                   icon={Edit}
-                  onClick={() => {
-                    // TODO: Implement edit elevator modal
-                    console.log('Edit elevator:', elevator.id);
-                  }}
+                  onClick={() => setEditingElevator(elevator)}
                   fullWidth
                 >
                   Edit
                 </Button>
                 
                 <Button
-                  variant={elevator.is_active ? "danger" : "secondary"}
+                  variant="danger"
                   size="sm"
-                  icon={elevator.is_active ? Trash2 : Plus}
-                  onClick={() => toggleElevatorStatus(elevator.id, elevator.is_active)}
+                  icon={Trash2}
+                  onClick={() => deleteElevator(elevator.id)}
                   fullWidth
                 >
-                  {elevator.is_active ? 'Deactivate' : 'Activate'}
+                  Delete
                 </Button>
               </div>
             </Card>
@@ -172,6 +274,14 @@ export const ManageElevators: React.FC = () => {
           </p>
         </Card>
       )}
+
+      {/* Edit Modal */}
+      <EditElevatorModal
+        isOpen={!!editingElevator}
+        onClose={() => setEditingElevator(null)}
+        elevator={editingElevator}
+        onSave={fetchElevators}
+      />
     </div>
   );
 };

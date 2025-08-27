@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Plus, Edit, Trash2, Search } from 'lucide-react';
-import { Card, Button, Input } from '../../../../components/Shared/SharedComponents';
+import { MapPin, Edit, Trash2, Search } from 'lucide-react';
+import { Card, Button, Input, Modal } from '../../../../components/Shared/SharedComponents';
 import { supabase } from '../../../../lib/supabase';
 import { useNotifications } from '../../../../contexts/NotificationContext';
 
@@ -14,10 +14,99 @@ interface Town {
   updated_at: string;
 }
 
+interface EditTownModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  town: Town | null;
+  onSave: () => void;
+}
+
+const EditTownModal: React.FC<EditTownModalProps> = ({ isOpen, onClose, town, onSave }) => {
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    province: ''
+  });
+  const { success, error } = useNotifications();
+
+  useEffect(() => {
+    if (town) {
+      setFormData({
+        name: town.name,
+        province: town.province || ''
+      });
+    }
+  }, [town]);
+
+  const handleSave = async () => {
+    if (!town || !formData.name.trim()) return;
+
+    try {
+      setLoading(true);
+      
+      const { error: updateError } = await supabase
+        .from('master_towns')
+        .update({
+          name: formData.name.trim(),
+          province: formData.province.trim() || null
+        })
+        .eq('id', town.id);
+
+      if (updateError) throw updateError;
+
+      success('Town updated', 'Town has been updated successfully');
+      onSave();
+      onClose();
+    } catch (err) {
+      console.error('Error updating town:', err);
+      error('Failed to update town', err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Edit Town">
+      <div className="p-6 space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Town Name</label>
+          <input
+            type="text"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-tg-green"
+            placeholder="Enter town name"
+            required
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Province</label>
+          <input
+            type="text"
+            value={formData.province}
+            onChange={(e) => setFormData({ ...formData, province: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-tg-green"
+            placeholder="Enter province (optional)"
+          />
+        </div>
+
+        <div className="flex justify-end gap-3 pt-4">
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="secondary" onClick={handleSave} loading={loading}>
+            Save Changes
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
 export const ManageTowns: React.FC = () => {
   const [towns, setTowns] = useState<Town[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [editingTown, setEditingTown] = useState<Town | null>(null);
   const { success, error } = useNotifications();
 
   const fetchTowns = async () => {
@@ -62,6 +151,25 @@ export const ManageTowns: React.FC = () => {
     }
   };
 
+  const deleteTown = async (townId: string) => {
+    if (!confirm('Are you sure you want to delete this town? This action cannot be undone.')) return;
+    
+    try {
+      const { error: deleteError } = await supabase
+        .from('master_towns')
+        .delete()
+        .eq('id', townId);
+
+      if (deleteError) throw deleteError;
+
+      setTowns(prev => prev.filter(town => town.id !== townId));
+      success('Town deleted', 'Town has been deleted successfully');
+    } catch (err) {
+      console.error('Error deleting town:', err);
+      error('Failed to delete town', err instanceof Error ? err.message : 'Unknown error');
+    }
+  };
+
   const filteredTowns = towns.filter(town =>
     town.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (town.province && town.province.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -96,9 +204,6 @@ export const ManageTowns: React.FC = () => {
             <p className="text-sm text-gray-600">{towns.length} total towns</p>
           </div>
         </div>
-        <Button variant="secondary" icon={Plus} size="sm">
-          Add Town
-        </Button>
       </div>
 
       {/* Search */}
@@ -160,23 +265,20 @@ export const ManageTowns: React.FC = () => {
                         variant="ghost"
                         size="sm"
                         icon={Edit}
-                        onClick={() => {
-                          // TODO: Implement edit town modal
-                          console.log('Edit town:', town.id);
-                        }}
+                        onClick={() => setEditingTown(town)}
                         fullWidth
                       >
                         Edit
                       </Button>
                       
                       <Button
-                        variant={town.is_active ? "danger" : "secondary"}
+                        variant="danger"
                         size="sm"
-                        icon={town.is_active ? Trash2 : Plus}
-                        onClick={() => toggleTownStatus(town.id, town.is_active)}
+                        icon={Trash2}
+                        onClick={() => deleteTown(town.id)}
                         fullWidth
                       >
-                        {town.is_active ? 'Deactivate' : 'Activate'}
+                        Delete
                       </Button>
                     </div>
                   </Card>
@@ -196,6 +298,14 @@ export const ManageTowns: React.FC = () => {
           </p>
         </Card>
       )}
+
+      {/* Edit Modal */}
+      <EditTownModal
+        isOpen={!!editingTown}
+        onClose={() => setEditingTown(null)}
+        town={editingTown}
+        onSave={fetchTowns}
+      />
     </div>
   );
 };
