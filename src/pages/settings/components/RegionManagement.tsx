@@ -10,7 +10,6 @@ import { CreateRegionModal } from './region-management/CreateRegionModal';
 import { CreateElevatorModal } from './region-management/CreateElevatorModal';
 import { CreateTownModal } from './region-management/CreateTownModal';
 import { CreateAssociationModal } from './region-management/CreateAssociationModal';
-import { useState } from 'react';
 
 export type RegionManagementTab = 'regions' | 'elevators' | 'towns' | 'associations';
 
