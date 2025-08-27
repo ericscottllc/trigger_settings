@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Search, Plus, Edit, Trash2, Mail, Calendar } from 'lucide-react';
-import { Card, Button, Input } from '../../../../components/Shared/SharedComponents';
+import { Users, Search, Mail, Calendar, Shield, User } from 'lucide-react';
+import { Card, Input } from '../../../../components/Shared/SharedComponents';
 import { supabase } from '../../../../lib/supabase';
-import { useNotifications } from '../../../../contexts/NotificationContext';
 
 interface User {
   id: string;
@@ -15,25 +14,44 @@ interface User {
   updated_at: string;
 }
 
+interface Role {
+  id: string;
+  name: string;
+}
+
+interface UserRole {
+  role: Role;
+}
+
+interface UserWithRoles extends User {
+  user_roles: UserRole[];
+}
+
 export const UserList: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<UserWithRoles[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const { success, error } = useNotifications();
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
       const { data, error: fetchError } = await supabase
         .from('public_users')
-        .select('*')
+        .select(`
+          *,
+          user_roles!user_roles_user_id_fkey (
+            roles (
+              id,
+              name
+            )
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (fetchError) throw fetchError;
       setUsers(data || []);
     } catch (err) {
       console.error('Error fetching users:', err);
-      error('Failed to load users', err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
@@ -42,26 +60,6 @@ export const UserList: React.FC = () => {
   useEffect(() => {
     fetchUsers();
   }, []);
-
-  const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
-    try {
-      const { error: updateError } = await supabase
-        .from('public_users')
-        .update({ is_active: !currentStatus })
-        .eq('id', userId);
-
-      if (updateError) throw updateError;
-
-      setUsers(prev => prev.map(user => 
-        user.id === userId ? { ...user, is_active: !currentStatus } : user
-      ));
-
-      success('User updated', `User ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
-    } catch (err) {
-      console.error('Error updating user:', err);
-      error('Failed to update user', err instanceof Error ? err.message : 'Unknown error');
-    }
-  };
 
   const filteredUsers = users.filter(user =>
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -83,13 +81,13 @@ export const UserList: React.FC = () => {
         <div className="flex items-center gap-3">
           <Users className="w-6 h-6 text-tg-primary" />
           <div>
-            <h2 className="text-xl font-semibold text-gray-800">User Management</h2>
-            <p className="text-sm text-gray-600">{users.length} total users</p>
+            <h2 className="text-xl font-semibold text-gray-800">System Users</h2>
+            <p className="text-sm text-gray-600">View all users and their assigned roles</p>
           </div>
         </div>
-        <Button variant="primary" icon={Plus} size="sm">
-          Add User
-        </Button>
+        <div className="text-sm text-gray-500">
+          {users.length} total users
+        </div>
       </div>
 
       {/* Search */}
@@ -129,39 +127,35 @@ export const UserList: React.FC = () => {
                     <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
                       <Calendar className="w-3 h-3" />
                       <span>Joined {new Date(user.created_at).toLocaleDateString()}</span>
+                      <span className="mx-1">•</span>
+                      <span className={user.is_active ? 'text-green-600' : 'text-red-600'}>
+                        {user.is_active ? 'Active' : 'Inactive'}
+                      </span>
                     </div>
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-2">
-                  <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    user.is_active 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {user.is_active ? 'Active' : 'Inactive'}
+                <div className="flex flex-col items-end gap-2">
+                  {/* Current Roles */}
+                  <div className="flex flex-wrap gap-1 justify-end">
+                    {user.user_roles && user.user_roles.length > 0 ? (
+                      user.user_roles.map((userRole, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center gap-1 px-2 py-1 bg-tg-primary/10 text-tg-primary rounded-full text-xs"
+                        >
+                          {userRole.role.name === 'Admin' ? (
+                            <Shield className="w-3 h-3" />
+                          ) : (
+                            <User className="w-3 h-3" />
+                          )}
+                          <span>{userRole.role.name}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <span className="text-xs text-gray-500 italic">No roles assigned</span>
+                    )}
                   </div>
-                  
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    icon={Edit}
-                    onClick={() => {
-                      // TODO: Implement edit user modal
-                      console.log('Edit user:', user.id);
-                    }}
-                  >
-                    Edit
-                  </Button>
-                  
-                  <Button
-                    variant={user.is_active ? "danger" : "secondary"}
-                    size="sm"
-                    icon={user.is_active ? Trash2 : Plus}
-                    onClick={() => toggleUserStatus(user.id, user.is_active)}
-                  >
-                    {user.is_active ? 'Deactivate' : 'Activate'}
-                  </Button>
                 </div>
               </div>
             </Card>

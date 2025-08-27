@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, UserCheck, Shield, Key } from 'lucide-react';
+import { Users, UserCheck } from 'lucide-react';
 import { Card } from '../../../components/Shared/SharedComponents';
-import { AssignRoles } from './user-management/AssignRoles';
-import { ManagePermissions } from './user-management/ManagePermissions';
-import { ManageRoles } from './user-management/ManageRoles';
 import { UserList } from './user-management/UserList';
+import { AssignRoles } from './user-management/AssignRoles';
 
-export type UserManagementTab = 'users' | 'roles' | 'permissions' | 'assign-roles';
+export type UserManagementTab = 'users' | 'assign-roles';
 
 interface UserManagementTabConfig {
   id: UserManagementTab;
@@ -20,30 +18,16 @@ interface UserManagementTabConfig {
 const userManagementTabs: UserManagementTabConfig[] = [
   {
     id: 'users',
-    title: 'Users',
+    title: 'View Users',
     icon: Users,
-    description: 'View and manage user accounts',
+    description: 'View user accounts and their current roles',
     component: UserList
   },
   {
-    id: 'roles',
-    title: 'Roles',
-    icon: Shield,
-    description: 'Create and manage user roles',
-    component: ManageRoles
-  },
-  {
-    id: 'permissions',
-    title: 'Permissions',
-    icon: Key,
-    description: 'Define system permissions',
-    component: ManagePermissions
-  },
-  {
     id: 'assign-roles',
-    title: 'Assign Roles',
+    title: 'Manage Roles',
     icon: UserCheck,
-    description: 'Assign roles to users',
+    description: 'Assign and modify user roles',
     component: AssignRoles
   }
 ];
