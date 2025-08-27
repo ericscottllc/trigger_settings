@@ -50,7 +50,7 @@ export const AssignRoles: React.FC = () => {
             id,
             role_id,
             assigned_at,
-            user_roles (
+            roles (
               id,
               name,
               description,
