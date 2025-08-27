@@ -20,7 +20,7 @@ interface Role {
 }
 
 interface UserRole {
-  role: Role;
+  roles: Role;
 }
 
 interface UserWithRoles extends User {
@@ -144,12 +144,12 @@ export const UserList: React.FC = () => {
                           key={index}
                           className="flex items-center gap-1 px-2 py-1 bg-tg-primary/10 text-tg-primary rounded-full text-xs"
                         >
-                          {userRole.role.name === 'Admin' ? (
+                          {userRole.roles.name === 'Admin' ? (
                             <Shield className="w-3 h-3" />
                           ) : (
                             <User className="w-3 h-3" />
                           )}
-                          <span>{userRole.role.name}</span>
+                          <span>{userRole.roles.name}</span>
                         </div>
                       ))
                     ) : (
