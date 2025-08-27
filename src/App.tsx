@@ -11,6 +11,7 @@ import { MainContent } from './components/Core/MainContent';
 import { CodeExplorer } from './CodeExplorer';
 import { SchemaExplorer } from './SchemaExplorer';
 import { ReferencesPage } from './pages/references';
+import { SettingsPage } from './pages/settings';
 import { NavigationItem } from './types/navigation';
 
 const AppContent: React.FC = () => {
@@ -104,6 +105,42 @@ const AppContent: React.FC = () => {
       </>
     );
   }
+
+  // Check if we should show the Settings page
+  if (activeNavItem?.title === 'Settings' && !activeNavItem?.redirect_active) {
+    return (
+      <>
+        <motion.div
+          className="flex h-screen bg-gray-50"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Sidebar activeItem={activeItem} onItemClick={handleItemClick} />
+          <SettingsPage />
+        </motion.div>
+
+        <AnimatePresence>
+          {showCodeExplorer && (
+            <CodeExplorer 
+              isOpen={showCodeExplorer} 
+              onClose={() => setShowCodeExplorer(false)} 
+            />
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {showSchemaExplorer && (
+            <SchemaExplorer 
+              isOpen={showSchemaExplorer} 
+              onClose={() => setShowSchemaExplorer(false)} 
+            />
+          )}
+        </AnimatePresence>
+      </>
+    );
+  }
+
   return (
     <>
     <motion.div
