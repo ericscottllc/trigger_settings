@@ -2,14 +2,16 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../contexts/NotificationContext';
-import { LogIn, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { LogIn, Mail, Lock, Eye, EyeOff, UserPlus, User } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
-  const { signInWithEmail } = useAuth();
-  const { error: showError } = useNotifications();
+  const { signInWithEmail, signUpWithEmail } = useAuth();
+  const { error: showError, success } = useNotifications();
   const [isLoading, setIsLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,6 +36,40 @@ export const LoginPage: React.FC = () => {
       console.error('Auth failed:', error);
       const errorMessage = 'An unexpected error occurred';
       showError('Sign In Failed', errorMessage);
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEmailSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      setError('Please fill in all fields');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const { error } = await signUpWithEmail(email, password, fullName);
+      
+      if (error) {
+        showError('Sign Up Failed', error.message);
+        setError(error.message);
+      } else {
+        success('Account Created', 'Your account has been created successfully. You can now sign in.');
+        // Reset form and switch to sign in
+        setEmail('');
+        setPassword('');
+        setFullName('');
+        setIsSignUp(false);
+      }
+    } catch (error) {
+      console.error('Sign up failed:', error);
+      const errorMessage = 'An unexpected error occurred';
+      showError('Sign Up Failed', errorMessage);
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -75,7 +111,9 @@ export const LoginPage: React.FC = () => {
               <h1 className="text-3xl font-bold text-gray-800">
                 TriggerGrain
               </h1>
-              <p className="text-gray-600 mt-2">Sign in to view your account</p>
+              <p className="text-gray-600 mt-2">
+                {isSignUp ? 'Create your account' : 'Sign in to view your account'}
+              </p>
             </motion.div>
 
             {/* Features */}
@@ -106,14 +144,28 @@ export const LoginPage: React.FC = () => {
               ))}
             </motion.div>
 
-            {/* Sign In Form */}
+            {/* Auth Form */}
             <motion.form
-              onSubmit={handleEmailSignIn}
+              onSubmit={isSignUp ? handleEmailSignUp : handleEmailSignIn}
               className="space-y-4 mb-6"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.9 }}
             >
+              {isSignUp && (
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Enter your full name (optional)"
+                    className="w-full pl-10 pr-4 py-3 bg-white/50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tg-primary focus:border-transparent transition-all duration-200"
+                    disabled={isLoading}
+                  />
+                </div>
+              )}
+              
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
@@ -173,13 +225,41 @@ export const LoginPage: React.FC = () => {
                     transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                   />
                   ) : (
-                  <LogIn className="w-5 h-5" />
+                  isSignUp ? <UserPlus className="w-5 h-5" /> : <LogIn className="w-5 h-5" />
                 )}
                 <span>
-                  {isLoading ? 'Signing in...' : 'Sign In'}
+                  {isLoading 
+                    ? (isSignUp ? 'Creating account...' : 'Signing in...') 
+                    : (isSignUp ? 'Create Account' : 'Sign In')
+                  }
                 </span>
               </motion.button>
             </motion.form>
+
+            {/* Toggle Sign Up / Sign In */}
+            <motion.div
+              className="text-center mb-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 1 }}
+            >
+              <button
+                onClick={() => {
+                  setIsSignUp(!isSignUp);
+                  setError(null);
+                  setEmail('');
+                  setPassword('');
+                  setFullName('');
+                }}
+                className="text-tg-primary hover:text-tg-primary/80 text-sm font-medium transition-colors"
+                disabled={isLoading}
+              >
+                {isSignUp 
+                  ? 'Already have an account? Sign in' 
+                  : "Don't have an account? Sign up"
+                }
+              </button>
+            </motion.div>
 
             {/* Footer */}
             <motion.p
