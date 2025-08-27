@@ -47,7 +47,7 @@ export const AssignRoles: React.FC = () => {
         .from('public_users')
         .select(`
           *,
-          user_roles (
+          user_roles!user_roles_user_id_fkey (
             id,
             role_id,
             assigned_at,
