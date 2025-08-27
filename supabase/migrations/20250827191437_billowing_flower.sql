@@ -41,7 +41,6 @@ DROP POLICY IF EXISTS "Authenticated users can read active associations" ON regi
 DROP POLICY IF EXISTS "Authenticated users can manage navigation items" ON navigation_items;
 DROP POLICY IF EXISTS "Authenticated users can manage schema queries" ON schema_queries;
 DROP POLICY IF EXISTS "Authenticated users can read schema queries" ON schema_queries;
-DROP POLICY IF EXISTS "Anyone can read active navigation items" ON navigation_items;
 
 -- Drop the incorrectly named grain_entries delete policy (it was UPDATE, not DELETE)
 DROP POLICY IF EXISTS "Admin users can delete grain entries" ON grain_entries;
