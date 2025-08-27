@@ -195,7 +195,7 @@ export const AssignRoles: React.FC = () => {
                         key={userRole.id}
                         className="flex items-center gap-2 px-3 py-1 bg-tg-primary/10 text-tg-primary rounded-full text-sm"
                       >
-                        <span>{userRole.role.name}</span>
+                        <span>{userRole.role?.name || 'Unknown Role'}</span>
                         <button
                           onClick={() => removeRole(userRole.id)}
                           className="hover:bg-red-100 hover:text-red-600 rounded-full p-1 transition-colors"
