@@ -21,10 +21,9 @@ interface Role {
 
 interface UserRole {
   id: string;
-  user_id: string;
   role_id: string;
   assigned_at: string;
-  role: Role;
+  roles: Role;
 }
 
 interface UserWithRoles extends User {
@@ -51,7 +50,7 @@ export const AssignRoles: React.FC = () => {
             id,
             role_id,
             assigned_at,
-            roles (
+            user_roles (
               id,
               name,
               description,
@@ -195,7 +194,7 @@ export const AssignRoles: React.FC = () => {
                         key={userRole.id}
                         className="flex items-center gap-2 px-3 py-1 bg-tg-primary/10 text-tg-primary rounded-full text-sm"
                       >
-                        <span>{userRole.role?.name || 'Unknown Role'}</span>
+                        <span>{userRole.roles?.name || 'Unknown Role'}</span>
                         <button
                           onClick={() => removeRole(userRole.id)}
                           className="hover:bg-red-100 hover:text-red-600 rounded-full p-1 transition-colors"
