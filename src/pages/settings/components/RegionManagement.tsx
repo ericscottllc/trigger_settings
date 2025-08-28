@@ -45,10 +45,13 @@ const regionManagementTabs: RegionManagementTabConfig[] = [
   }
 ];
 
+export const RegionManagement: React.FC = () => {
   const [activeTab, setActiveTab] = useState<RegionManagementTab>('regions');
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   const activeTabConfig = regionManagementTabs.find(tab => tab.id === activeTab);
+  const ActiveComponent = activeTabConfig?.component || (() => <div>Component not found</div>);
+  
   return (
     <div className="max-w-7xl mx-auto p-6">
       {/* Compact Tab Navigation */}
