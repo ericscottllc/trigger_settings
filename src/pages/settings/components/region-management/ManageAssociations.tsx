@@ -5,6 +5,7 @@ import { Button } from '../../../../components/Shared/SharedComponents';
 import { supabase } from '../../../../lib/supabase';
 import { useNotifications } from '../../../../contexts/NotificationContext';
 import { CreateAssociationModal } from './CreateAssociationModal';
+import { EditAssociationModal } from './EditAssociationModal';
 
 // Types for the associations
 interface ElevatorTown {
@@ -68,6 +69,7 @@ export const ManageAssociations: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingAssociation, setEditingAssociation] = useState<any>(null);
   const { success, error } = useNotifications();
 
   const associationTypes = [
@@ -289,8 +291,7 @@ export const ManageAssociations: React.FC = () => {
           <div className="flex items-center justify-end gap-2">
             <button
               onClick={() => {
-                // TODO: Implement edit modal
-                console.log('Edit association:', association.id);
+                setEditingAssociation(association);
               }}
               className="p-1 text-gray-400 hover:text-tg-green transition-colors"
               title="Edit"
@@ -442,6 +443,18 @@ export const ManageAssociations: React.FC = () => {
         onSave={() => {
           fetchAssociations();
           setShowCreateModal(false);
+        }}
+      />
+
+      {/* Edit Modal */}
+      <EditAssociationModal
+        isOpen={!!editingAssociation}
+        onClose={() => setEditingAssociation(null)}
+        type={activeAssociationType}
+        association={editingAssociation}
+        onSave={() => {
+          fetchAssociations();
+          setEditingAssociation(null);
         }}
       />
     </div>
