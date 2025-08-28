@@ -5,11 +5,10 @@ import { Card } from '../../../components/Shared/SharedComponents';
 import { ManageRegions } from './region-management/ManageRegions';
 import { ManageElevators } from './region-management/ManageElevators';
 import { ManageTowns } from './region-management/ManageTowns';
-import { RegionAssociations } from './region-management/RegionAssociations';
+import { ManageAssociations } from './region-management/ManageAssociations';
 import { CreateRegionModal } from './region-management/CreateRegionModal';
 import { CreateElevatorModal } from './region-management/CreateElevatorModal';
 import { CreateTownModal } from './region-management/CreateTownModal';
-import { CreateAssociationModal } from './region-management/CreateAssociationModal';
 
 export type RegionManagementTab = 'regions' | 'elevators' | 'towns' | 'associations';
 
@@ -47,8 +46,8 @@ const regionManagementTabs: RegionManagementTabConfig[] = [
     id: 'associations',
     title: 'Associations',
     icon: Network,
-    description: 'Manage region-elevator-town associations',
-    component: RegionAssociations
+    description: 'Manage relationships between regions, elevators, towns, and crops',
+    component: ManageAssociations
   }
 ];
 
@@ -67,8 +66,6 @@ export const RegionManagement: React.FC = () => {
         return <CreateElevatorModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} />;
       case 'towns':
         return <CreateTownModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} />;
-      case 'associations':
-        return <CreateAssociationModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} />;
       default:
         return null;
     }
@@ -106,15 +103,17 @@ export const RegionManagement: React.FC = () => {
             })}
           </div>
           
-          <motion.button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-tg-green text-white rounded-lg font-medium text-sm hover:bg-tg-green/90 transition-colors"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <Plus className="w-4 h-4" />
-            Add {activeTabConfig?.title.slice(0, -1) || 'Item'}
-          </motion.button>
+          {activeTab !== 'associations' && (
+            <motion.button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-tg-green text-white rounded-lg font-medium text-sm hover:bg-tg-green/90 transition-colors"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Plus className="w-4 h-4" />
+              Add {activeTabConfig?.title.slice(0, -1) || 'Item'}
+            </motion.button>
+          )}
         </div>
         
         {activeTabConfig && (
