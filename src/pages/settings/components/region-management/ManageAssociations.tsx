@@ -4,7 +4,7 @@ import { Network, Plus, Edit, Trash2, Search, MapPin, Building2, Wheat, Layers, 
 import { Button } from '../../../../components/Shared/SharedComponents';
 import { supabase } from '../../../../lib/supabase';
 import { useNotifications } from '../../../../contexts/NotificationContext';
-import { CreateAssociationModal } from './CreateAssociationModal.tsx';
+import { CreateAssociationModal } from './CreateAssociationModal';
 
 // Types for the associations
 interface ElevatorTown {
