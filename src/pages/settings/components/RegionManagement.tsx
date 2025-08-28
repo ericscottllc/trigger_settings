@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { MapPin, Building2, Map, Network } from 'lucide-react';
 import { ManageRegions } from './region-management/ManageRegions';
 import { ManageElevators } from './region-management/ManageElevators';
+import { ManageTowns } from './region-management/ManageTowns';
+import { ManageAssociations } from './region-management/ManageAssociations';
 
 export type RegionManagementTab = 'regions' | 'elevators' | 'towns' | 'associations';
 
