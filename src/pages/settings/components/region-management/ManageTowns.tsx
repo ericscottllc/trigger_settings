@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Edit, Trash2, Search } from 'lucide-react';
-import { Card, Button, Input, Modal } from '../../../../components/Shared/SharedComponents';
+import { MapPin, Plus, Edit, Trash2, Search } from 'lucide-react';
+import { Button } from '../../../../components/Shared/SharedComponents';
 import { supabase } from '../../../../lib/supabase';
 import { useNotifications } from '../../../../contexts/NotificationContext';
+import { CreateTownModal } from './CreateTownModal';
 
 interface Town {
   id: string;
@@ -65,40 +66,48 @@ const EditTownModal: React.FC<EditTownModalProps> = ({ isOpen, onClose, town, on
     }
   };
 
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Edit Town">
-      <div className="p-6 space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Town Name</label>
-          <input
-            type="text"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-tg-green"
-            placeholder="Enter town name"
-            required
-          />
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Province</label>
-          <input
-            type="text"
-            value={formData.province}
-            onChange={(e) => setFormData({ ...formData, province: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-tg-green"
-            placeholder="Enter province (optional)"
-          />
-        </div>
+  if (!isOpen) return null;
 
-        <div className="flex justify-end gap-3 pt-4">
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button variant="secondary" onClick={handleSave} loading={loading}>
-            Save Changes
-          </Button>
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+        <div className="p-6">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Edit Town</h2>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Town Name</label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-tg-green"
+                placeholder="Enter town name"
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Province</label>
+              <input
+                type="text"
+                value={formData.province}
+                onChange={(e) => setFormData({ ...formData, province: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-tg-green"
+                placeholder="Enter province (optional)"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4">
+              <Button variant="ghost" onClick={onClose}>Cancel</Button>
+              <Button variant="secondary" onClick={handleSave} loading={loading}>
+                Save Changes
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
-    </Modal>
+    </div>
   );
 };
 
@@ -107,6 +116,7 @@ export const ManageTowns: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [editingTown, setEditingTown] = useState<Town | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const { success, error } = useNotifications();
 
   const fetchTowns = async () => {
@@ -130,26 +140,6 @@ export const ManageTowns: React.FC = () => {
   useEffect(() => {
     fetchTowns();
   }, []);
-
-  const toggleTownStatus = async (townId: string, currentStatus: boolean) => {
-    try {
-      const { error: updateError } = await supabase
-        .from('master_towns')
-        .update({ is_active: !currentStatus })
-        .eq('id', townId);
-
-      if (updateError) throw updateError;
-
-      setTowns(prev => prev.map(town => 
-        town.id === townId ? { ...town, is_active: !currentStatus } : town
-      ));
-
-      success('Town updated', `Town ${!currentStatus ? 'activated' : 'deactivated'} successfully`);
-    } catch (err) {
-      console.error('Error updating town:', err);
-      error('Failed to update town', err instanceof Error ? err.message : 'Unknown error');
-    }
-  };
 
   const deleteTown = async (townId: string) => {
     if (!confirm('Are you sure you want to delete this town? This action cannot be undone.')) return;
@@ -175,16 +165,6 @@ export const ManageTowns: React.FC = () => {
     (town.province && town.province.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  // Group towns by province
-  const groupedTowns = filteredTowns.reduce((acc, town) => {
-    const province = town.province || 'No Province';
-    if (!acc[province]) {
-      acc[province] = [];
-    }
-    acc[province].push(town);
-    return acc;
-  }, {} as Record<string, Town[]>);
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -194,112 +174,120 @@ export const ManageTowns: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-4">
+      {/* Header with integrated search */}
+      <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <MapPin className="w-6 h-6 text-tg-green" />
-          <div>
-            <h2 className="text-xl font-semibold text-gray-800">Town Management</h2>
-            <p className="text-sm text-gray-600">{towns.length} total towns</p>
+          <MapPin className="w-5 h-5 text-tg-green" />
+          <h2 className="text-lg font-semibold text-gray-800">Towns ({towns.length})</h2>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search towns..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-tg-green text-sm w-64"
+            />
           </div>
+          <Button
+            variant="primary"
+            icon={Plus}
+            size="sm"
+            onClick={() => setShowCreateModal(true)}
+            className="bg-tg-green hover:bg-tg-green/90"
+          >
+            Add Town
+          </Button>
         </div>
       </div>
 
-      {/* Search */}
-      <Card className="p-4">
-        <Input
-          icon={Search}
-          placeholder="Search towns by name or province..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          fullWidth
-        />
-      </Card>
+      {/* Table */}
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Province</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {filteredTowns.map((town, index) => (
+              <motion.tr
+                key={town.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2, delay: index * 0.02 }}
+                className="hover:bg-gray-50"
+              >
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-tg-green" />
+                    <span className="font-medium text-gray-900">{town.name}</span>
+                  </div>
+                </td>
+                <td className="px-4 py-3">
+                  <span className="text-sm text-gray-600">{town.province || '—'}</span>
+                </td>
+                <td className="px-4 py-3">
+                  <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                    town.is_active 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {town.is_active ? 'Active' : 'Inactive'}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-sm text-gray-600">
+                  {new Date(town.created_at).toLocaleDateString()}
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      onClick={() => setEditingTown(town)}
+                      className="p-1 text-gray-400 hover:text-tg-green transition-colors"
+                      title="Edit"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => deleteTown(town.id)}
+                      className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </td>
+              </motion.tr>
+            ))}
+          </tbody>
+        </table>
 
-      {/* Towns List - Grouped by Province */}
-      <div className="space-y-6">
-        {Object.entries(groupedTowns).map(([province, provinceTowns]) => (
-          <div key={province}>
-            <div className="flex items-center gap-2 mb-4">
-              <MapPin className="w-5 h-5 text-tg-green" />
-              <h3 className="text-lg font-semibold text-gray-800">{province}</h3>
-              <span className="px-2 py-1 bg-tg-green/10 text-tg-green text-xs font-medium rounded-full">
-                {provinceTowns.length} towns
-              </span>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {provinceTowns.map((town, index) => (
-                <motion.div
-                  key={town.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
-                >
-                  <Card className="p-4 hover:shadow-lg transition-shadow">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-tg-green rounded-lg flex items-center justify-center">
-                          <MapPin className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-800">{town.name}</h4>
-                          {town.province && (
-                            <p className="text-sm text-gray-600">{town.province}</p>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        town.is_active 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {town.is_active ? 'Active' : 'Inactive'}
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 mt-4">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        icon={Edit}
-                        onClick={() => setEditingTown(town)}
-                        fullWidth
-                      >
-                        Edit
-                      </Button>
-                      
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        icon={Trash2}
-                        onClick={() => deleteTown(town.id)}
-                        fullWidth
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
+        {filteredTowns.length === 0 && (
+          <div className="p-8 text-center">
+            <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-800 mb-2">No towns found</h3>
+            <p className="text-gray-600">
+              {searchTerm ? 'Try adjusting your search terms' : 'No towns have been created yet'}
+            </p>
           </div>
-        ))}
+        )}
       </div>
 
-      {filteredTowns.length === 0 && (
-        <Card className="p-8 text-center">
-          <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-800 mb-2">No towns found</h3>
-          <p className="text-gray-600">
-            {searchTerm ? 'Try adjusting your search terms' : 'No towns have been created yet'}
-          </p>
-        </Card>
-      )}
-
-      {/* Edit Modal */}
+      {/* Modals */}
+      <CreateTownModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSave={fetchTowns}
+      />
+      
       <EditTownModal
         isOpen={!!editingTown}
         onClose={() => setEditingTown(null)}

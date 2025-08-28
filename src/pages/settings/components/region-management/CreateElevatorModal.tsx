@@ -6,9 +6,10 @@ import { useNotifications } from '../../../../contexts/NotificationContext';
 interface CreateElevatorModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSave?: () => void;
 }
 
-export const CreateElevatorModal: React.FC<CreateElevatorModalProps> = ({ isOpen, onClose }) => {
+export const CreateElevatorModal: React.FC<CreateElevatorModalProps> = ({ isOpen, onClose, onSave }) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -34,6 +35,7 @@ export const CreateElevatorModal: React.FC<CreateElevatorModalProps> = ({ isOpen
 
       success('Elevator created', 'New elevator has been created successfully');
       setFormData({ name: '', code: '' });
+      if (onSave) onSave();
       onClose();
     } catch (err) {
       console.error('Error creating elevator:', err);

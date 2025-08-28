@@ -6,9 +6,10 @@ import { useNotifications } from '../../../../contexts/NotificationContext';
 interface CreateTownModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSave?: () => void;
 }
 
-export const CreateTownModal: React.FC<CreateTownModalProps> = ({ isOpen, onClose }) => {
+export const CreateTownModal: React.FC<CreateTownModalProps> = ({ isOpen, onClose, onSave }) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -34,6 +35,7 @@ export const CreateTownModal: React.FC<CreateTownModalProps> = ({ isOpen, onClos
 
       success('Town created', 'New town has been created successfully');
       setFormData({ name: '', province: '' });
+      if (onSave) onSave();
       onClose();
     } catch (err) {
       console.error('Error creating town:', err);

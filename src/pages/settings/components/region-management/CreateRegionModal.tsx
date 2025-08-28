@@ -6,9 +6,10 @@ import { useNotifications } from '../../../../contexts/NotificationContext';
 interface CreateRegionModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSave?: () => void;
 }
 
-export const CreateRegionModal: React.FC<CreateRegionModalProps> = ({ isOpen, onClose }) => {
+export const CreateRegionModal: React.FC<CreateRegionModalProps> = ({ isOpen, onClose, onSave }) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -34,6 +35,7 @@ export const CreateRegionModal: React.FC<CreateRegionModalProps> = ({ isOpen, on
 
       success('Region created', 'New region has been created successfully');
       setFormData({ name: '', code: '' });
+      if (onSave) onSave();
       onClose();
     } catch (err) {
       console.error('Error creating region:', err);
