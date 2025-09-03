@@ -30,7 +30,7 @@ export const MainContent: React.FC<MainContentProps> = ({ activeNavItem, onNavig
     return currentHost === targetHost;
   };
 
-  const shouldShowRedirectButton = activeNavItem.redirect_active && !isOnTargetSite();
+  const shouldShowRedirectButton = activeNavItem.redirect_active;
 
   return (
     <div className="flex-1 bg-gray-50 overflow-auto">
@@ -55,13 +55,10 @@ export const MainContent: React.FC<MainContentProps> = ({ activeNavItem, onNavig
 
           {/* Description */}
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            {isOnTargetSite() 
-              ? `Welcome to ${activeNavItem.title}! You're now on the dedicated application.`
-              : `This is a placeholder for the ${activeNavItem.title} application. Replace this content with your actual ${activeNavItem.title} functionality.`
-            }
+            This is a placeholder for the ${activeNavItem.title} application. Replace this content with your actual ${activeNavItem.title} functionality.
           </p>
 
-          {/* Action Button - Only show if not already on target site */}
+          {/* Action Button */}
           {shouldShowRedirectButton && (
             <motion.button
               onClick={() => onNavigate(activeNavItem.subdomain, activeNavItem.redirect_active)}
@@ -73,27 +70,11 @@ export const MainContent: React.FC<MainContentProps> = ({ activeNavItem, onNavig
             </motion.button>
           )}
 
-          {/* Current Site Indicator */}
-          {isOnTargetSite() && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className={`inline-flex items-center gap-2 px-6 py-3 ${getBackgroundColor(activeNavItem.color)} text-white rounded-xl font-medium shadow-md`}
-            >
-              <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-              <span>You're on {activeNavItem.title}</span>
-            </motion.div>
-          )}
-
           {/* Action Info */}
           <div className="text-sm text-gray-500 mt-4">
             {shouldShowRedirectButton ? (
               <p>
                 Will redirect to: <code className="bg-gray-100 px-2 py-1 rounded text-gray-700">{activeNavItem.subdomain}</code>
-              </p>
-            ) : isOnTargetSite() ? (
-              <p>
-                Currently on: <code className="bg-gray-100 px-2 py-1 rounded text-gray-700">{window.location.hostname}</code>
               </p>
             ) : (
               <p>
