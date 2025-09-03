@@ -11,7 +11,6 @@ import { MainContent } from './components/Core/MainContent';
 import { CodeExplorer } from './CodeExplorer';
 import { SchemaExplorer } from './SchemaExplorer';
 import { ReferencesPage } from './pages/references';
-import { SettingsPage } from './pages/settings';
 import { NavigationItem } from './types/navigation';
 
 const AppContent: React.FC = () => {
@@ -71,6 +70,25 @@ const AppContent: React.FC = () => {
     }
   };
 
+  // Check if we're on the target site for a redirect_active navigation item
+  const isOnTargetSite = (item: NavigationItem): boolean => {
+    const currentHost = window.location.hostname;
+    const targetHost = item.subdomain.replace(/^https?:\/\//, '');
+    return currentHost === targetHost;
+  };
+
+  // If we're on the target site and it has redirect_active=true, 
+  // don't show the navigation framework - let the real site content show
+  if (activeNavItem?.redirect_active && isOnTargetSite(activeNavItem)) {
+    // Return minimal structure - just the real site content will show
+    return (
+      <div className="min-h-screen">
+        {/* The actual site content will be rendered by the real application */}
+        {/* This framework gets out of the way */}
+      </div>
+    );
+  }
+
   // Check if we should show the References page
   if (activeNavItem?.title === 'References' && !activeNavItem?.redirect_active) {
     return (
@@ -83,41 +101,6 @@ const AppContent: React.FC = () => {
         >
           <Sidebar activeItem={activeItem} onItemClick={handleItemClick} />
           <ReferencesPage />
-        </motion.div>
-
-        <AnimatePresence>
-          {showCodeExplorer && (
-            <CodeExplorer 
-              isOpen={showCodeExplorer} 
-              onClose={() => setShowCodeExplorer(false)} 
-            />
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {showSchemaExplorer && (
-            <SchemaExplorer 
-              isOpen={showSchemaExplorer} 
-              onClose={() => setShowSchemaExplorer(false)} 
-            />
-          )}
-        </AnimatePresence>
-      </>
-    );
-  }
-
-  // Check if we should show the Settings page
-  if (activeNavItem?.title === 'Settings' && !activeNavItem?.redirect_active) {
-    return (
-      <>
-        <motion.div
-          className="flex h-screen bg-gray-50"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Sidebar activeItem={activeItem} onItemClick={handleItemClick} />
-          <SettingsPage />
         </motion.div>
 
         <AnimatePresence>
