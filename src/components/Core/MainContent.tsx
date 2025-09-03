@@ -23,6 +23,15 @@ export const MainContent: React.FC<MainContentProps> = ({ activeNavItem, onNavig
 
   const IconComponent = getIconComponent(activeNavItem.icon_name);
 
+  // Check if we're already on the target subdomain
+  const isOnTargetSite = () => {
+    const currentHost = window.location.hostname;
+    const targetHost = activeNavItem.subdomain.replace(/^https?:\/\//, '');
+    return currentHost === targetHost;
+  };
+
+  const shouldShowRedirectButton = activeNavItem.redirect_active && !isOnTargetSite();
+
   return (
     <div className="flex-1 bg-gray-50 overflow-auto">
       <div className="max-w-4xl mx-auto p-8">
@@ -46,26 +55,45 @@ export const MainContent: React.FC<MainContentProps> = ({ activeNavItem, onNavig
 
           {/* Description */}
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            This is a placeholder for the {activeNavItem.title} application. Replace this content with your actual {activeNavItem.title} functionality.
+            {isOnTargetSite() 
+              ? `Welcome to ${activeNavItem.title}! You're now on the dedicated application.`
+              : `This is a placeholder for the ${activeNavItem.title} application. Replace this content with your actual ${activeNavItem.title} functionality.`
+            }
           </p>
 
-          {/* Action Button */}
-          <motion.button
-            onClick={() => onNavigate(activeNavItem.subdomain, activeNavItem.redirect_active)}
-            className={`inline-flex items-center gap-3 px-8 py-4 ${getBackgroundColor(activeNavItem.color)} text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200`}
-            whileHover={{ scale: 1.05, y: -2 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <span>
-              {activeNavItem.redirect_active ? `Launch ${activeNavItem.title}` : `View ${activeNavItem.title}`}
-            </span>
-          </motion.button>
+          {/* Action Button - Only show if not already on target site */}
+          {shouldShowRedirectButton && (
+            <motion.button
+              onClick={() => onNavigate(activeNavItem.subdomain, activeNavItem.redirect_active)}
+              className={`inline-flex items-center gap-3 px-8 py-4 ${getBackgroundColor(activeNavItem.color)} text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200`}
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <span>Launch {activeNavItem.title}</span>
+            </motion.button>
+          )}
+
+          {/* Current Site Indicator */}
+          {isOnTargetSite() && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className={`inline-flex items-center gap-2 px-6 py-3 ${getBackgroundColor(activeNavItem.color)} text-white rounded-xl font-medium shadow-md`}
+            >
+              <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+              <span>You're on {activeNavItem.title}</span>
+            </motion.div>
+          )}
 
           {/* Action Info */}
           <div className="text-sm text-gray-500 mt-4">
-            {activeNavItem.redirect_active ? (
+            {shouldShowRedirectButton ? (
               <p>
                 Will redirect to: <code className="bg-gray-100 px-2 py-1 rounded text-gray-700">{activeNavItem.subdomain}</code>
+              </p>
+            ) : isOnTargetSite() ? (
+              <p>
+                Currently on: <code className="bg-gray-100 px-2 py-1 rounded text-gray-700">{window.location.hostname}</code>
               </p>
             ) : (
               <p>
