@@ -32,7 +32,7 @@ const normalizeTitle = (title: string): string => {
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
   const { navigationItems } = useNavigation();
-  const [activeItem, setActiveItem] = useState('dashboard');
+  const [activeItem, setActiveItem] = useState('settings');
   const [showCodeExplorer, setShowCodeExplorer] = useState(false);
   const [showSchemaExplorer, setShowSchemaExplorer] = useState(false);
 
