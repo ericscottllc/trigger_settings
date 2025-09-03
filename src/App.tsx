@@ -13,6 +13,20 @@ import { SchemaExplorer } from './SchemaExplorer';
 import { ReferencesPage } from './pages/references';
 import { NavigationItem } from './types/navigation';
 
+// Dynamic page component mapping
+// Add new page components here to make them available for navigation
+const PAGE_COMPONENTS: Record<string, React.ComponentType> = {
+  'references': ReferencesPage,
+  // Add more page components here as they are created
+  // 'dashboard': DashboardPage,
+  // 'grain-entries': GrainEntriesPage,
+  // 'analytics': AnalyticsPage,
+};
+
+// Helper function to normalize navigation item titles to component keys
+const normalizeTitle = (title: string): string => {
+  return title.toLowerCase().replace(/\s+/g, '-');
+};
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
   const { navigationItems } = useNavigation();
@@ -89,8 +103,20 @@ const AppContent: React.FC = () => {
     );
   }
 
-  // Check if we should show the References page
-  if (activeNavItem?.title === 'References' && !activeNavItem?.redirect_active) {
+  // Dynamic page component selection
+  const getPageComponent = (): React.ComponentType | null => {
+    if (!activeNavItem || activeNavItem.redirect_active) {
+      return null; // Use MainContent for redirect items or when no active item
+    }
+    
+    const normalizedTitle = normalizeTitle(activeNavItem.title);
+    return PAGE_COMPONENTS[normalizedTitle] || null;
+  };
+
+  const PageComponent = getPageComponent();
+
+  // If we have a specific page component, render it with the sidebar
+  if (PageComponent) {
     return (
       <>
         <motion.div
@@ -100,7 +126,7 @@ const AppContent: React.FC = () => {
           transition={{ duration: 0.5 }}
         >
           <Sidebar activeItem={activeItem} onItemClick={handleItemClick} />
-          <ReferencesPage />
+          <PageComponent />
         </motion.div>
 
         <AnimatePresence>
@@ -123,29 +149,29 @@ const AppContent: React.FC = () => {
       </>
     );
   }
-
+  // Default: render MainContent for redirect items or fallback
   return (
     <>
-    <motion.div
-      className="flex h-screen bg-gray-50"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
-      <Sidebar activeItem={activeItem} onItemClick={handleItemClick} />
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeItem}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.3 }}
-          className="flex-1"
-        >
-          <MainContent activeNavItem={activeNavItem} onNavigate={handleNavigate} />
-        </motion.div>
-      </AnimatePresence>
-    </motion.div>
+      <motion.div
+        className="flex h-screen bg-gray-50"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Sidebar activeItem={activeItem} onItemClick={handleItemClick} />
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeItem}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+            className="flex-1"
+          >
+            <MainContent activeNavItem={activeNavItem} onNavigate={handleNavigate} />
+          </motion.div>
+        </AnimatePresence>
+      </motion.div>
 
       <AnimatePresence>
         {showCodeExplorer && (
