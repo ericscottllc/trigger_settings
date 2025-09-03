@@ -93,22 +93,15 @@ const AppContent: React.FC = () => {
     return currentHost === targetHost;
   };
 
-  // If we're on the target site and it has redirect_active=true, 
-  // don't show the navigation framework - let the real site content show
-  if (activeNavItem?.redirect_active && isOnTargetSite(activeNavItem)) {
-    // Return minimal structure - just the real site content will show
-    return (
-      <div className="min-h-screen">
-        {/* The actual site content will be rendered by the real application */}
-        {/* This framework gets out of the way */}
-      </div>
-    );
-  }
-
   // Dynamic page component selection
   const getPageComponent = (): React.ComponentType | null => {
-    if (!activeNavItem || activeNavItem.redirect_active) {
-      return null; // Use MainContent for redirect items or when no active item
+    if (!activeNavItem) {
+      return null; // Use MainContent when no active item
+    }
+    
+    // If redirect_active is true but we're on the target site, show the page component
+    if (activeNavItem.redirect_active && !isOnTargetSite(activeNavItem)) {
+      return null; // Use MainContent for redirect items when not on target site
     }
     
     const normalizedTitle = normalizeTitle(activeNavItem.title);
