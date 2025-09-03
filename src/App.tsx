@@ -12,6 +12,7 @@ import { CodeExplorer } from './CodeExplorer';
 import { SchemaExplorer } from './SchemaExplorer';
 import { ReferencesPage } from './pages/references';
 import { NavigationItem } from './types/navigation';
+import { Settings } from './pages/settings/
 
 // Dynamic page component mapping
 // Add new page components here to make them available for navigation
