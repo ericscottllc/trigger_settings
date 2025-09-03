@@ -18,11 +18,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeItem, onItemClick }) => 
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
   const handleItemClick = (item: NavigationItem) => {
-    if (item.redirect_active) {
-      // Redirect to the subdomain URL
+    // Check if we're already on the target subdomain
+    const currentHost = window.location.hostname;
+    const targetHost = item.subdomain.replace(/^https?:\/\//, '');
+    const isOnTargetSite = currentHost === targetHost;
+
+    if (item.redirect_active && !isOnTargetSite) {
+      // Only redirect if we're not already on the target site
       window.location.href = `https://${item.subdomain}`;
     } else {
-      // Show local content
+      // Show local content (either redirect_active=false or already on target site)
       onItemClick(item);
     }
   };
