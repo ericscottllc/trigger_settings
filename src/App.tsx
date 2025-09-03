@@ -18,7 +18,7 @@ import { SettingsPage } from './pages/settings/SettingsPage';
 // Add new page components here to make them available for navigation
 const PAGE_COMPONENTS: Record<string, React.ComponentType> = {
   'references': ReferencesPage,
-  'settings': Settings,
+  'settings': SettingsPage,
   // Add more page components here as they are created
   // 'dashboard': DashboardPage,
   // 'grain-entries': GrainEntriesPage,
